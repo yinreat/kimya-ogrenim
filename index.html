@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>KimyaKafası</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{
+  margin:0;
+  font-family:system-ui;
+  background:#0b1220;
+  color:#e5e7eb;
+}
+.screen{
+  display:none;
+  padding:20px;
+  max-width:420px;
+  margin:auto;
+}
+.active{display:block;}
+h1{text-align:center;color:#38bdf8;}
+h2{color:#38bdf8;font-size:18px;margin-top:20px;}
+button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:10px;
+  font-size:16px;
+  cursor:pointer;
+  transition:transform 0.1s;
+}
+button:active{transform:scale(0.98);}
+.green{background:#22c55e;}
+.orange{background:#f59e0b;color:#000;}
+.red{background:#ef4444;}
+.blue{background:#3b82f6;}
+.purple{background:#a855f7;}
+.gray{background:#334155;}
+input{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  margin-top:10px;
+  box-sizing:border-box;
+}
+.info{
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+  color:#94a3b8;
+  margin-bottom:10px;
+}
+.timer{
+  font-size:20px;
+  color:#f59e0b;
+  text-align:center;
+  margin:10px 0;
+  font-weight:bold;
+}
+.stats{
+  background:#1e293b;
+  padding:15px;
+  border-radius:10px;
+  margin:10px 0;
+}
+.stat-row{
+  display:flex;
+  justify-content:space-between;
+  margin:5px 0;
+  font-size:14px;
+}
+.leaderboard{
+  background:#1e293b;
+  padding:10px;
+  border-radius:10px;
+  margin:10px 0;
+}
+.leader-item{
+  display:flex;
+  justify-content:space-between;
+  padding:8px;
+  border-bottom:1px solid #334155;
+}
+.footer{
+  margin-top:20px;
+  text-align:center;
+  font-size:13px;
+  color:#94a3b8;
+}
+.footer img{
+  width:70px;
+  border-radius:50%;
+  display:block;
+  margin:0 auto 5px;
+}
+.difficulty-badge{
+  display:inline-block;
+  padding:4px 12px;
+  border-radius:20px;
+  font-size:12px;
+  margin:5px;
+}
+.easy{background:#22c55e;}
+.medium{background:#f59e0b;color:#000;}
+.hard{background:#ef4444;}
+.streak{
+  text-align:center;
+  font-size:24px;
+  margin:10px 0;
+  color:#fbbf24;
+}
+.difficulty-select{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:10px;
+  margin:15px 0;
+}
+.difficulty-select button{
+  margin:0;
+}
+</style>
+</head>
+<body>
+
+<!-- GİRİŞ -->
+<div class="screen active" id="home">
+  <h1>🧠 KimyaKafalı</h1>
+  <div class="stats">
+    <div class="stat-row">
+      <span>Toplam Skor:</span>
+      <span id="totalScore">0</span>
+    </div>
+    <div class="stat-row">
+      <span>En Yüksek Seri:</span>
+      <span id="highStreak">0</span>
+    </div>
+  </div>
+
+  <h2>Zorluk Seç</h2>
+  <div class="difficulty-select">
+    <button class="green" onclick="startWithDifficulty('kolay')">😊<br>Kolay<br>30sn</button>
+    <button class="orange" onclick="startWithDifficulty('orta')">😐<br>Orta<br>20sn</button>
+    <button class="red" onclick="startWithDifficulty('zor')">😤<br>Zor<br>15sn</button>
+  </div>
+  
+  <button class="blue" onclick="go('leaderboard')">🏆 Lider Tablosu</button>
+  <button class="gray" onclick="go('stats')">📊 İstatistikler</button>
+  <button class="gray" onclick="go('info')">ℹ Bilgi</button>
+  <button class="gray" onclick="go('settings')">⚙ Ayarlar</button>
+
+  <div class="footer">
+    YİNREAT
+  </div>
+</div>
+
+<!-- OYUN -->
+<div class="screen" id="game">
+  <div class="info">
+    <span id="mode">Karışık</span>
+    <span id="money">💰 0</span>
+  </div>
+  
+  <div class="info">
+    <span>Zorluk: <span id="difficultyDisplay" class="difficulty-badge easy">Kolay</span></span>
+    <span>Soru: <span id="questionCount">1</span>/10</span>
+  </div>
+
+  <div class="timer" id="timer">⏱ 30</div>
+  <div class="streak" id="streak">🔥 0</div>
+
+  <h1 id="question"></h1>
+  <input id="answer" placeholder="Cevabı yaz" autocomplete="off" aria-label="Cevap" onkeypress="if(event.key==='Enter')check()">
+  <button class="green" onclick="check()">Kontrol Et</button>
+  <button class="orange" onclick="hint()">💡 İpucu (5)</button>
+  <div id="result" style="text-align:center;margin-top:10px;font-size:18px;"></div>
+
+  <button class="gray" onclick="endGame()">⬅ Oyunu Bitir</button>
+
+  <div class="footer">
+    <img src="kimya.png" >
+    @kimyakafali
+  </div>
+</div>
+
+<!-- LİDER TABLOSU -->
+<div class="screen" id="leaderboard">
+  <h1>🏆 Lider Tablosu</h1>
+  <div class="leaderboard" id="leaderList"></div>
+  <button class="gray" onclick="go('home')">⬅ Geri</button>
+</div>
+
+<!-- İSTATİSTİKLER -->
+<div class="screen" id="stats">
+  <h1>📊 İstatistikler</h1>
+  <div class="stats">
+    <h2>Genel İstatistikler</h2>
+    <div id="categoryStats"></div>
+  </div>
+  <button class="red" onclick="resetStats()">🗑 İstatistikleri Sıfırla</button>
+  <button class="gray" onclick="go('home')">⬅ Geri</button>
+</div>
+
+<!-- BİLGİ -->
+<div class="screen" id="info">
+  <h1>ℹ Bilgi</h1>
+  
+  <div style="background:#1e293b;padding:15px;border-radius:10px;margin:10px 0;">
+    <h2>🔗 Hidrokarbon Grupları</h2>
+    <p><b>Alkan:</b> Tek bağ, genel formül CₙH₂ₙ₊₂, katılma tepkimesi vermez.</p>
+    <p><b>Alken:</b> Çift bağ (C=C), genel formül CₙH₂ₙ, katılma tepkimesi verir.</p>
+    <p><b>Alkin:</b> Üçlü bağ (C≡C), genel formül CₙH₂ₙ₋₂, katılma tepkimesi verir.</p>
+  </div>
+
+  <div style="background:#1e293b;padding:15px;border-radius:10px;margin:10px 0;">
+    <h2>🔬 Bağ Bilgileri</h2>
+    <p><b>Sigma (σ) bağ:</b> Her bağda 1 tane vardır.</p>
+    <p><b>Pi (π) bağ:</b> Çift bağda 1, üçlü bağda 2 tane vardır.</p>
+    <p><b>Toplam bağ:</b> Sigma + Pi bağlarının toplamı</p>
+  </div>
+
+  <div style="background:#1e293b;padding:15px;border-radius:10px;margin:10px 0;">
+    <h2>⚗️ Tepkimeler</h2>
+    <p><b>Yanma Tepkimesi:</b> Hidrokarbon + O₂ → CO₂ + H₂O</p>
+    <p><b>Katılma Tepkimesi:</b> Çift veya üçlü bağa atom/grup eklenir</p>
+  </div>
+
+  <button class="gray" onclick="go('home')">⬅ Geri</button>
+</div>
+
+<!-- AYARLAR -->
+<div class="screen" id="settings">
+  <h1>⚙ Ayarlar</h1>
+  
+  <h2>Oyun Modu</h2>
+  <button class="blue" onclick="toggleTimer()">⏱ Süre: <span id="timerStatus">Açık</span></button>
+  
+  <h2>Soru Havuzu</h2>
+  <p style="text-align:center;color:#94a3b8;">Toplam ~500 soru</p>
+  <p style="text-align:center;color:#94a3b8;">Alkan, Alken, Alkin karışık</p>
+
+  <button class="gray" style="margin-top:20px;" onclick="go('home')">⬅ Geri</button>
+</div>
+
+<script>
+// Veri yapıları
+const alkan = ["","metan","etan","propan","bütan","pentan","heksan","heptan","oktan","nonan","dekan"];
+const alken = ["","eten","propen","büten","penten","hekzen","hepten","okten","nonen","deken"];
+const alkin = ["","etin","propin","bütin","pentin","heksin","heptin","oktin","nonin","dekin"];
+
+// Oyun durumu
+let gameState = {
+  money: 0,
+  totalScore: parseInt(localStorage.getItem('totalScore') || '0'),
+  highStreak: parseInt(localStorage.getItem('highStreak') || '0'),
+  currentStreak: 0,
+  questionNumber: 1,
+  maxQuestions: 10,
+  difficulty: 'kolay',
+  timerEnabled: true,
+  timeLeft: 30,
+  timerInterval: null,
+  stats: JSON.parse(localStorage.getItem('stats') || '{"dogru":0,"yanlis":0}')
+};
+
+let current;
+let usedQuestions = [];
+
+// Geniş soru havuzu (500+ soru)
+function generateQuestionPool(){
+  let pool = [];
+  
+  // ALKAN SORULARI (150+ soru)
+  for(let c = 1; c <= 10; c++){
+    pool.push({q:`C${c}H${2*c+2} bileşiğinin adı nedir?`, a:alkan[c], diff:'kolay'});
+    pool.push({q:`${alkan[c]} kaç karbonludur?`, a:c.toString(), diff:'kolay'});
+    pool.push({q:`${alkan[c]} kaç hidrojenlidir?`, a:(2*c+2).toString(), diff:'kolay'});
+    pool.push({q:`C${c}H${2*c+2} kaç sigma bağı içerir?`, a:(3*c+1).toString(), diff:'orta'});
+    pool.push({q:`${alkan[c]} kaç sigma bağı içerir?`, a:(3*c+1).toString(), diff:'orta'});
+    pool.push({q:`C${c}H${2*c+2} kaç pi bağı içerir?`, a:"0", diff:'kolay'});
+    pool.push({q:`${alkan[c]} kaç pi bağı içerir?`, a:"0", diff:'kolay'});
+    pool.push({q:`C${c}H${2*c+2} yanınca kaç CO₂ oluşur?`, a:c.toString(), diff:'orta'});
+    pool.push({q:`${alkan[c]} yanınca kaç CO₂ oluşur?`, a:c.toString(), diff:'orta'});
+    pool.push({q:`C${c}H${2*c+2} yanınca kaç H₂O oluşur?`, a:(c+1).toString(), diff:'orta'});
+    pool.push({q:`${alkan[c]} yanınca kaç H₂O oluşur?`, a:(c+1).toString(), diff:'orta'});
+    pool.push({q:`${alkan[c]} katılma tepkimesi verir mi?`, a:"hayır", diff:'kolay'});
+    pool.push({q:`C${c}H${2*c+2} katılma tepkimesi verir mi?`, a:"hayır", diff:'kolay'});
+    pool.push({q:`${alkan[c]} genel formülü CnH2n+2 ye uyar mu?`, a:"evet", diff:'orta'});
+    pool.push({q:`C${c}H${2*c+2} bir alkan mıdır?`, a:"evet", diff:'kolay'});
+  }
+  
+  // ALKEN SORULARI (150+ soru)
+  for(let c = 2; c <= 10; c++){
+    pool.push({q:`C${c}H${2*c} bileşiğinin adı nedir?`, a:alken[c-1], diff:'kolay'});
+    pool.push({q:`${alken[c-1]} kaç karbonludur?`, a:c.toString(), diff:'kolay'});
+    pool.push({q:`${alken[c-1]} kaç hidrojenlidir?`, a:(2*c).toString(), diff:'kolay'});
+    pool.push({q:`C${c}H${2*c} kaç sigma bağı içerir?`, a:(3*c-1).toString(), diff:'zor'});
+    pool.push({q:`${alken[c-1]} kaç sigma bağı içerir?`, a:(3*c-1).toString(), diff:'zor'});
+    pool.push({q:`C${c}H${2*c} kaç pi bağı içerir?`, a:"1", diff:'kolay'});
+    pool.push({q:`${alken[c-1]} kaç pi bağı içerir?`, a:"1", diff:'kolay'});
+    pool.push({q:`C${c}H${2*c} yanınca kaç CO₂ oluşur?`, a:c.toString(), diff:'orta'});
+    pool.push({q:`${alken[c-1]} yanınca kaç CO₂ oluşur?`, a:c.toString(), diff:'orta'});
+    pool.push({q:`C${c}H${2*c} yanınca kaç H₂O oluşur?`, a:c.toString(), diff:'orta'});
+    pool.push({q:`${alken[c-1]} yanınca kaç H₂O oluşur?`, a:c.toString(), diff:'orta'});
+    pool.push({q:`${alken[c-1]} katılma tepkimesi verir mi?`, a:"evet", diff:'kolay'});
+    pool.push({q:`C${c}H${2*c} katılma tepkimesi verir mi?`, a:"evet", diff:'kolay'});
+    pool.push({q:`${alken[c-1]} kaç çift bağ içerir?`, a:"1", diff:'kolay'});
+    pool.push({q:`C${c}H${2*c} bir alken midir?`, a:"evet", diff:'kolay'});
+    pool.push({q:`${alken[c-1]} toplam kaç bağ içerir?`, a:(3*c).toString(), diff:'zor'});
+  }
+  
+  // ALKİN SORULARI (150+ soru)
+  for(let c = 2; c <= 10; c++){
+    pool.push({q:`C${c}H${2*c-2} bileşiğinin adı nedir?`, a:alkin[c-1], diff:'kolay'});
+    pool.push({q:`${alkin[c-1]} kaç karbonludur?`, a:c.toString(), diff:'kolay'});
+    pool.push({q:`${alkin[c-1]} kaç hidrojenlidir?`, a:(2*c-2).toString(), diff:'kolay'});
+    pool.push({q:`C${c}H${2*c-2} kaç sigma bağı içerir?`, a:(3*c-3).toString(), diff:'zor'});
+    pool.push({q:`${alkin[c-1]} kaç sigma bağı içerir?`, a:(3*c-3).toString(), diff:'zor'});
+    pool.push({q:`C${c}H${2*c-2} kaç pi bağı içerir?`, a:"2", diff:'orta'});
+    pool.push({q:`${alkin[c-1]} kaç pi bağı içerir?`, a:"2", diff:'orta'});
+    pool.push({q:`C${c}H${2*c-2} yanınca kaç CO₂ oluşur?`, a:c.toString(), diff:'orta'});
+    pool.push({q:`${alkin[c-1]} yanınca kaç CO₂ oluşur?`, a:c.toString(), diff:'orta'});
+    pool.push({q:`C${c}H${2*c-2} yanınca kaç H₂O oluşur?`, a:(c-1).toString(), diff:'orta'});
+    pool.push({q:`${alkin[c-1]} yanınca kaç H₂O oluşur?`, a:(c-1).toString(), diff:'orta'});
+    pool.push({q:`${alkin[c-1]} katılma tepkimesi verir mi?`, a:"evet", diff:'kolay'});
+    pool.push({q:`C${c}H${2*c-2} katılma tepkimesi verir mi?`, a:"evet", diff:'kolay'});
+    pool.push({q:`${alkin[c-1]} kaç üçlü bağ içerir?`, a:"1", diff:'kolay'});
+    pool.push({q:`C${c}H${2*c-2} bir alkin midir?`, a:"evet", diff:'kolay'});
+    pool.push({q:`${alkin[c-1]} toplam kaç bağ içerir?`, a:(3*c-1).toString(), diff:'zor'});
+  }
+  
+  // KARŞILAŞTIRMA SORULARI (50+ soru)
+  pool.push({q:"Metan kaç sigma bağlıdır?", a:"4", diff:'kolay'});
+  pool.push({q:"Eten kaç pi bağlıdır?", a:"1", diff:'kolay'});
+  pool.push({q:"Etin kaç pi bağlıdır?", a:"2", diff:'kolay'});
+  pool.push({q:"En basit alkan hangisidir?", a:"metan", diff:'kolay'});
+  pool.push({q:"En basit alken hangisidir?", a:"eten", diff:'kolay'});
+  pool.push({q:"En basit alkin hangisidir?", a:"etin", diff:'kolay'});
+  pool.push({q:"Propan hangi hidrokarbon türüdür?", a:"alkan", diff:'kolay'});
+  pool.push({q:"Propen hangi hidrokarbon türüdür?", a:"alken", diff:'kolay'});
+  pool.push({q:"Propin hangi hidrokarbon türüdür?", a:"alkin", diff:'kolay'});
+  pool.push({q:"C3H8 hangi türden hidrokarbondur?", a:"alkan", diff:'orta'});
+  pool.push({q:"C3H6 hangi türden hidrokarbondur?", a:"alken", diff:'orta'});
+  pool.push({q:"C3H4 hangi türden hidrokarbondur?", a:"alkin", diff:'orta'});
+  pool.push({q:"Tek bağlı hidrokarbonlar hangi gruptur?", a:"alkan", diff:'kolay'});
+  pool.push({q:"Çift bağlı hidrokarbonlar hangi gruptur?", a:"alken", diff:'kolay'});
+  pool.push({q:"Üçlü bağlı hidrokarbonlar hangi gruptur?", a:"alkin", diff:'kolay'});
+  pool.push({q:"CnH2n+2 hangi grubun genel formülüdür?", a:"alkan", diff:'orta'});
+  pool.push({q:"CnH2n hangi grubun genel formülüdür?", a:"alken", diff:'orta'});
+  pool.push({q:"CnH2n-2 hangi grubun genel formülüdür?", a:"alkin", diff:'orta'});
+  pool.push({q:"Bütan toplam kaç atomludur?", a:"14", diff:'zor'});
+  pool.push({q:"Pentan toplam kaç atomludur?", a:"17", diff:'zor'});
+  pool.push({q:"Heksan toplam kaç atomludur?", a:"20", diff:'zor'});
+  pool.push({q:"Etan molekül kütlesi yaklaşık kaçtır?", a:"30", diff:'zor'});
+  pool.push({q:"Propan molekül kütlesi yaklaşık kaçtır?", a:"44", diff:'zor'});
+  pool.push({q:"Metan'da kaç tane C-H bağı vardır?", a:"4", diff:'orta'});
+  pool.push({q:"Eten'de kaç tane C-H bağı vardır?", a:"4", diff:'orta'});
+  pool.push({q:"Etin'de kaç tane C-H bağı vardır?", a:"2", diff:'orta'});
+  pool.push({q:"Propan formülü nedir?", a:"c3h8", diff:'kolay'});
+  pool.push({q:"Büten formülü nedir?", a:"c4h8", diff:'kolay'});
+  pool.push({q:"Pentin formülü nedir?", a:"c5h8", diff:'orta'});
+  pool.push({q:"Alkanlar doymuş mudur doymamış mıdır?", a:"doymuş", diff:'orta'});
+  pool.push({q:"Alkenler doymuş mudur doymamış mıdır?", a:"doymamış", diff:'orta'});
+  pool.push({q:"Alkinler doymuş mudur doymamış mıdır?", a:"doymamış", diff:'orta'});
+  pool.push({q:"Oktan kaç karbonlu alkandır?", a:"8", diff:'kolay'});
+  pool.push({q:"Hepten kaç karbonlu alkendir?", a:"7", diff:'kolay'});
+  pool.push({q:"Heksin kaç karbonlu alkindir?", a:"6", diff:'kolay'});
+  pool.push({q:"C5H12 hangi alkanın formülüdür?", a:"pentan", diff:'orta'});
+  pool.push({q:"C6H12 hangi alkenin formülüdür?", a:"hekzen", diff:'orta'});
+  pool.push({q:"C7H12 hangi alkinin formülüdür?", a:"heptin", diff:'orta'});
+  pool.push({q:"Metan yanınca kaç H2O oluşur?", a:"2", diff:'kolay'});
+  pool.push({q:"Etan yanınca kaç CO2 oluşur?", a:"2", diff:'kolay'});
+  pool.push({q:"Propan yanınca kaç H2O oluşur?", a:"4", diff:'orta'});
+  pool.push({q:"Büten yanınca kaç CO2 oluşur?", a:"4", diff:'orta'});
+  pool.push({q:"Pentin yanınca kaç H2O oluşur?", a:"5", diff:'orta'});
+  pool.push({q:"Alkanların soneki nedir?", a:"an", diff:'kolay'});
+  pool.push({q:"Alkenlerin soneki nedir?", a:"en", diff:'kolay'});
+  pool.push({q:"Alkinlerin soneki nedir?", a:"in", diff:'kolay'});
+  pool.push({q:"4 karbonlu alkan adı nedir?", a:"bütan", diff:'kolay'});
+  pool.push({q:"5 karbonlu alken adı nedir?", a:"penten", diff:'kolay'});
+  pool.push({q:"6 karbonlu alkin adı nedir?", a:"heksin", diff:'kolay'});
+  pool.push({q:"Dekan kaç karbonludur?", a:"10", diff:'kolay'});
+  pool.push({q:"Nonan kaç karbonludur?", a:"9", diff:'kolay'});
+  pool.push({q:"Oktan kaç karbonludur?", a:"8", diff:'kolay'});
+  
+  return pool;
+}
+
+const questionPool = generateQuestionPool();
+
+// Ekran geçişi
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  
+  if(id==="home") updateHomeScreen();
+  if(id==="leaderboard") updateLeaderboard();
+  if(id==="stats") updateStats();
+}
+
+// Zorlukla başlat
+function startWithDifficulty(diff){
+  gameState.difficulty = diff;
+  go('game');
+  startGame();
+}
+
+// Ana ekran güncelle
+function updateHomeScreen(){
+  document.getElementById('totalScore').innerText = gameState.totalScore;
+  document.getElementById('highStreak').innerText = gameState.highStreak;
+}
+
+// Oyunu başlat
+function startGame(){
+  gameState.money = 0;
+  gameState.currentStreak = 0;
+  gameState.questionNumber = 1;
+  usedQuestions = [];
+  updateDisplay();
+  newQuestion();
+  if(gameState.timerEnabled) startTimer();
+}
+
+// Oyunu bitir
+function endGame(){
+  stopTimer();
+  saveScore();
+  go('home');
+}
+
+// Skor kaydet
+function saveScore(){
+  gameState.totalScore += gameState.money;
+  if(gameState.currentStreak > gameState.highStreak){
+    gameState.highStreak = gameState.currentStreak;
+    localStorage.setItem('highStreak', gameState.highStreak);
+  }
+  localStorage.setItem('totalScore', gameState.totalScore);
+  
+  let leaders = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+  leaders.push({
+    score: gameState.money,
+    streak: gameState.currentStreak,
+    difficulty: gameState.difficulty,
+    date: new Date().toLocaleDateString('tr-TR')
+  });
+  leaders.sort((a,b) => b.score - a.score);
+  leaders = leaders.slice(0, 10);
+  localStorage.setItem('leaderboard', JSON.stringify(leaders));
+}
+
+// Lider tablosunu güncelle
+function updateLeaderboard(){
+  let leaders = JSON.parse(localStorage.getItem('leaderboard') || '[]');
+  let html = '';
+  if(leaders.length === 0){
+    html = '<p style="text-align:center;color:#94a3b8;">Henüz kayıt yok</p>';
+  } else {
+    leaders.forEach((l, i) => {
+      html += `<div class="leader-item">
+        <span>${i+1}. ${l.difficulty} - ${l.date}</span>
+        <span>💰${l.score} 🔥${l.streak}</span>
+      </div>`;
+    });
+  }
+  document.getElementById('leaderList').innerHTML = html;
+}
+
+// İstatistikleri güncelle
+function updateStats(){
+  let s = gameState.stats;
+  let total = s.dogru + s.yanlis;
+  let oran = total > 0 ? Math.round((s.dogru / total) * 100) : 0;
+  let html = `
+    <div class="stat-row"><span>Toplam Soru:</span><span>${total}</span></div>
+    <div class="stat-row"><span>Doğru:</span><span style="color:#22c55e">✅ ${s.dogru}</span></div>
+    <div class="stat-row"><span>Yanlış:</span><span style="color:#ef4444">❌ ${s.yanlis}</span></div>
+    <div class="stat-row"><span>Başarı Oranı:</span><span style="color:#38bdf8"><b>%${oran}</b></span></div>
+  `;
+  document.getElementById('categoryStats').innerHTML = html;
+}
+
+// İstatistikleri sıfırla
+function resetStats(){
+  if(confirm('Tüm istatistikler silinecek. Emin misiniz?')){
+    localStorage.clear();
+    gameState.totalScore = 0;
+    gameState.highStreak = 0;
+    gameState.stats = {dogru:0, yanlis:0};
+    updateStats();
+    updateHomeScreen();
+    alert('İstatistikler sıfırlandı!');
+  }
+}
+
+// Zamanlayıcı
+function startTimer(){
+  gameState.timeLeft = gameState.difficulty === 'kolay' ? 30 : gameState.difficulty === 'orta' ? 20 : 15;
+  updateTimer();
+  gameState.timerInterval = setInterval(()=>{
+    gameState.timeLeft--;
+    updateTimer();
+    if(gameState.timeLeft <= 0){
+      stopTimer();
+      document.getElementById("result").innerHTML = "⏰ Süre Doldu!<br>✅ Doğru: " + current.a;
+      gameState.currentStreak = 0;
+      gameState.stats.yanlis++;
+      localStorage.setItem('stats', JSON.stringify(gameState.stats));
+      updateDisplay();
+      setTimeout(()=>{
+        if(gameState.questionNumber >= gameState.maxQuestions){
+          endGame();
+        } else {
+          gameState.questionNumber++;
+          newQuestion();
+          if(gameState.timerEnabled) startTimer();
+        }
+      }, 2000);
+    }
+  }, 1000);
+}
+
+function stopTimer(){
+  if(gameState.timerInterval){
+    clearInterval(gameState.timerInterval);
+    gameState.timerInterval = null;
+  }
+}
+
+function updateTimer(){
+  let color = gameState.timeLeft > 10 ? '#22c55e' : gameState.timeLeft > 5 ? '#f59e0b' : '#ef4444';
+  document.getElementById("timer").innerHTML = `⏱ ${gameState.timeLeft}`;
+  document.getElementById("timer").style.color = color;
+}
+
+function toggleTimer(){
+  gameState.timerEnabled = !gameState.timerEnabled;
+  document.getElementById("timerStatus").innerText = gameState.timerEnabled ? "Açık" : "Kapalı";
+}
+
+// Ekran güncelleme
+function updateDisplay(){
+  document.getElementById("money").innerText = "💰 " + gameState.money;
+  document.getElementById("streak").innerText = "🔥 " + gameState.currentStreak;
+  document.getElementById("questionCount").innerText = gameState.questionNumber + "/10";
+  document.getElementById("mode").innerText = "Karışık";
+  
+  let badge = document.getElementById("difficultyDisplay");
+  badge.innerText = gameState.difficulty.charAt(0).toUpperCase() + gameState.difficulty.slice(1);
+  badge.className = "difficulty-badge " + (gameState.difficulty === 'kolay' ? 'easy' : gameState.difficulty === 'orta' ? 'medium' : 'hard');
+}
+
+// Rastgele sayı
+function rand(min,max){
+  return Math.floor(Math.random()*(max-min+1))+min;
+}
+
+// Soru üretimi
+function newQuestion(){
+  updateDisplay();
+  
+  // Zorluk seviyesine göre filtrele
+  let filtered = questionPool.filter(q => {
+    if(gameState.difficulty === 'kolay') return q.diff === 'kolay';
+    if(gameState.difficulty === 'orta') return q.diff === 'kolay' || q.diff === 'orta';
+    return true; // zor modda tüm sorular
+  });
+  
+  // Kullanılmamış soruları al
+  let available = filtered.filter((q, i) => !usedQuestions.includes(filtered.indexOf(q)));
+  
+  // Eğer tüm sorular bittiyse resetle
+  if(available.length === 0){
+    usedQuestions = [];
+    available = filtered;
+  }
+  
+  // Rastgele soru seç
+  let randomQ = available[rand(0, available.length - 1)];
+  let originalIndex = filtered.indexOf(randomQ);
+  usedQuestions.push(originalIndex);
+  
+  current = {q: randomQ.q, a: randomQ.a};
+  showQuestion();
+}
+
+function showQuestion(){
+  document.getElementById("question").innerText = current.q;
+  document.getElementById("answer").value="";
+  document.getElementById("result").innerText="";
+  document.getElementById("answer").focus();
+}
+
+// Kullanıcı cevabını normalize et
+function norm(x){
+  return x.toLowerCase()
+    .replace(/ /g,'')
+    .replace(/ç/g,'c')
+    .replace(/ı/g,'i')
+    .replace(/ğ/g,'g')
+    .replace(/ö/g,'o')
+    .replace(/ş/g,'s')
+    .replace(/ü/g,'u')
+    .replace(/₂/g,'2')
+    .replace(/₃/g,'3')
+    .replace(/₄/g,'4')
+    .replace(/₅/g,'5')
+    .replace(/₆/g,'6')
+    .replace(/₇/g,'7')
+    .replace(/₈/g,'8')
+    .trim();
+}
+
+// Cevabı kontrol et
+function check(){
+  let g = norm(document.getElementById("answer").value);
+  let cevap = norm(current.a);
+  
+  stopTimer();
+  
+  if(g === cevap){
+    gameState.money++;
+    gameState.currentStreak++;
+    document.getElementById("result").innerText="✅ Doğru!";
+    gameState.stats.dogru++;
+    localStorage.setItem('stats', JSON.stringify(gameState.stats));
+    
+    setTimeout(()=>{
+      if(gameState.questionNumber >= gameState.maxQuestions){
+        endGame();
+      } else {
+        gameState.questionNumber++;
+        newQuestion();
+        if(gameState.timerEnabled) startTimer();
+      }
+    }, 800);
+  } else {
+    gameState.currentStreak = 0;
+    document.getElementById("result").innerHTML = `❌ Yanlış<br>✅ Doğru: ${current.a}`;
+    gameState.stats.yanlis++;
+    localStorage.setItem('stats', JSON.stringify(gameState.stats));
+    
+    setTimeout(()=>{
+      if(gameState.questionNumber >= gameState.maxQuestions){
+        endGame();
+      } else {
+        gameState.questionNumber++;
+        newQuestion();
+        if(gameState.timerEnabled) startTimer();
+      }
+    }, 2000);
+  }
+  updateDisplay();
+}
+
+// İpucu
+function hint(){
+  if(gameState.money < 5){
+    alert("Yetersiz para! İpucu için en az 5 puan gerekli.");
+    return;
+  }
+  gameState.money -= 5;
+  document.getElementById("money").innerText = "💰 " + gameState.money;
+  document.getElementById("result").innerText = "💡 Cevap: " + current.a;
+}
+
+// Sayfa yüklendiğinde
+window.onload = function(){
+  updateHomeScreen();
+};
+</script>
+
+</body>
+</html>
