@@ -1,2 +1,0 @@
-# kimya-renim
-kimya 
